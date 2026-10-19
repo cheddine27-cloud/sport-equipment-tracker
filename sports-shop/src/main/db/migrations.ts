@@ -359,8 +359,7 @@ export function migrate(db: Database.Database): void {
 /** Reads a setting value; returns null when the key does not exist. */
 export function getSetting(db: Database.Database, key: string): string | null {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
-    | { value: string }
-    | undefined
+    { value: string } | undefined
   return row ? row.value : null
 }
 

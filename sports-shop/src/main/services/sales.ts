@@ -4,7 +4,14 @@
  * stock deduction, sale rows and movement history are atomic.
  */
 import type Database from 'better-sqlite3'
-import { AppError, type ReturnInput, type ReturnRecord, type Sale, type SaleInput, type SaleItem } from '../../shared/types'
+import {
+  AppError,
+  type ReturnInput,
+  type ReturnRecord,
+  type Sale,
+  type SaleInput,
+  type SaleItem
+} from '../../shared/types'
 import { nonNegativeInt, optionalText, positiveInt, requireReason } from './validation'
 import { recordMovementV2 } from './movements'
 import { logAudit } from './audit'
@@ -41,19 +48,36 @@ interface SaleItemRow {
 
 function mapSale(r: SaleRow, items: SaleItem[]): Sale {
   return {
-    id: r.id, invoiceNo: r.invoice_no, subtotal: r.subtotal, discount: r.discount,
-    total: r.total, paid: r.paid, balance: r.balance, paymentMethod: r.payment_method,
-    status: r.status, cancelledAt: r.cancelled_at, cancelReason: r.cancel_reason,
-    note: r.note, customerId: r.customer_id, customerName: r.customer_name,
-    createdAt: r.created_at, items
+    id: r.id,
+    invoiceNo: r.invoice_no,
+    subtotal: r.subtotal,
+    discount: r.discount,
+    total: r.total,
+    paid: r.paid,
+    balance: r.balance,
+    paymentMethod: r.payment_method,
+    status: r.status,
+    cancelledAt: r.cancelled_at,
+    cancelReason: r.cancel_reason,
+    note: r.note,
+    customerId: r.customer_id,
+    customerName: r.customer_name,
+    createdAt: r.created_at,
+    items
   }
 }
 
 function mapItem(r: SaleItemRow): SaleItem {
   return {
-    id: r.id, saleId: r.sale_id, productId: r.product_id, productCode: r.product_code,
-    productName: r.product_name, quantity: r.quantity, unitPrice: r.unit_price,
-    purchasePrice: r.purchase_price, returnedQty: r.returned_qty
+    id: r.id,
+    saleId: r.sale_id,
+    productId: r.product_id,
+    productCode: r.product_code,
+    productName: r.product_name,
+    quantity: r.quantity,
+    unitPrice: r.unit_price,
+    purchasePrice: r.purchase_price,
+    returnedQty: r.returned_qty
   }
 }
 
@@ -64,9 +88,11 @@ export function getSale(db: Database.Database, id: number): Sale | null {
   const row = db.prepare(`${SALE_SELECT} WHERE s.id = ?`).get(id) as SaleRow | undefined
   if (!row) return null
   const items = db
-    .prepare(`SELECT si.id, si.sale_id, si.product_id, p.code AS product_code, p.name AS product_name,
+    .prepare(
+      `SELECT si.id, si.sale_id, si.product_id, p.code AS product_code, p.name AS product_name,
               si.quantity, si.unit_price, si.purchase_price, si.returned_qty
-              FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = ? ORDER BY si.id`)
+              FROM sale_items si JOIN products p ON p.id = si.product_id WHERE si.sale_id = ? ORDER BY si.id`
+    )
     .all(id) as SaleItemRow[]
   return mapSale(row, items.map(mapItem))
 }
@@ -90,7 +116,11 @@ export function listSales(db: Database.Database, search = '', limit = 100): Sale
 function nextInvoiceNo(db: Database.Database): string {
   db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('invoice_counter', '0')`).run()
   const cur = Number(
-    (db.prepare(`SELECT value FROM settings WHERE key = 'invoice_counter'`).get() as { value: string }).value
+    (
+      db.prepare(`SELECT value FROM settings WHERE key = 'invoice_counter'`).get() as {
+        value: string
+      }
+    ).value
   )
   const next = cur + 1
   db.prepare(`UPDATE settings SET value = ? WHERE key = 'invoice_counter'`).run(String(next))
@@ -103,7 +133,8 @@ function nextInvoiceNo(db: Database.Database): string {
  */
 export function createSale(db: Database.Database, input: SaleInput): Sale {
   const linesRaw = Array.isArray(input.lines) ? input.lines : []
-  if (linesRaw.length === 0) throw new AppError('VALIDATION', 'سلة البيع فارغة — أضف منتجاً واحداً على الأقل')
+  if (linesRaw.length === 0)
+    throw new AppError('VALIDATION', 'سلة البيع فارغة — أضف منتجاً واحداً على الأقل')
   if (linesRaw.length > 200) throw new AppError('VALIDATION', 'عدد الأصناف كبير جداً')
 
   const lines = linesRaw.map((l, i) => ({
@@ -115,7 +146,10 @@ export function createSale(db: Database.Database, input: SaleInput): Sale {
   const merged = new Map<number, { quantity: number; unitPrice: number }>()
   for (const l of lines) {
     const prev = merged.get(l.productId)
-    merged.set(l.productId, { quantity: (prev?.quantity ?? 0) + l.quantity, unitPrice: l.unitPrice })
+    merged.set(l.productId, {
+      quantity: (prev?.quantity ?? 0) + l.quantity,
+      unitPrice: l.unitPrice
+    })
   }
 
   const discount = nonNegativeInt(input.discount, 'الخصم')
@@ -129,17 +163,49 @@ export function createSale(db: Database.Database, input: SaleInput): Sale {
 
   const tx = db.transaction((): Sale => {
     let subtotal = 0
-    const prepared: Array<{ productId: number; quantity: number; unitPrice: number; name: string; code: string; purchasePrice: number; balanceAfter: number }> = []
+    const prepared: Array<{
+      productId: number
+      quantity: number
+      unitPrice: number
+      name: string
+      code: string
+      purchasePrice: number
+      balanceAfter: number
+    }> = []
     for (const [productId, l] of merged) {
-      const p = db.prepare('SELECT id, code, name, quantity, purchase_price, active FROM products WHERE id = ?').get(productId) as
-        { id: number; code: string; name: string; quantity: number; purchase_price: number; active: number } | undefined
+      const p = db
+        .prepare(
+          'SELECT id, code, name, quantity, purchase_price, active FROM products WHERE id = ?'
+        )
+        .get(productId) as
+        | {
+            id: number
+            code: string
+            name: string
+            quantity: number
+            purchase_price: number
+            active: number
+          }
+        | undefined
       if (!p) throw new AppError('NOT_FOUND', `المنتج (معرف ${productId}) غير موجود`)
-      if (p.active !== 1) throw new AppError('VALIDATION', `المنتج «${p.name}» غير مفعّل ولا يمكن بيعه`)
+      if (p.active !== 1)
+        throw new AppError('VALIDATION', `المنتج «${p.name}» غير مفعّل ولا يمكن بيعه`)
       if (p.quantity < l.quantity) {
-        throw new AppError('NEGATIVE_STOCK', `الكمية غير كافية لـ «${p.name}»: المتوفر ${p.quantity} والمطلوب ${l.quantity}`)
+        throw new AppError(
+          'NEGATIVE_STOCK',
+          `الكمية غير كافية لـ «${p.name}»: المتوفر ${p.quantity} والمطلوب ${l.quantity}`
+        )
       }
       subtotal += l.quantity * l.unitPrice
-      prepared.push({ ...l, name: p.name, code: p.code, purchasePrice: p.purchase_price, balanceAfter: p.quantity - l.quantity })
+      prepared.push({
+        productId,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        name: p.name,
+        code: p.code,
+        purchasePrice: p.purchase_price,
+        balanceAfter: p.quantity - l.quantity
+      })
     }
     if (discount > subtotal) throw new AppError('VALIDATION', 'الخصم أكبر من مجموع الفاتورة')
     const total = subtotal - discount
@@ -179,7 +245,9 @@ export function createSale(db: Database.Database, input: SaleInput): Sale {
 
     // Link an existing customer by exact name when available (optional nicety).
     if (customerName) {
-      const cust = db.prepare('SELECT id FROM customers WHERE name = ? AND active = 1').get(customerName) as { id: number } | undefined
+      const cust = db
+        .prepare('SELECT id FROM customers WHERE name = ? AND active = 1')
+        .get(customerName) as { id: number } | undefined
       if (cust) db.prepare('UPDATE sales SET customer_id = ? WHERE id = ?').run(cust.id, saleId)
     }
 
@@ -202,10 +270,15 @@ export function cancelSale(db: Database.Database, saleId: number, reason: string
     for (const item of sale.items) {
       const restorable = item.quantity - item.returnedQty
       if (restorable <= 0) continue
-      const p = db.prepare('SELECT quantity FROM products WHERE id = ?').get(item.productId) as { quantity: number } | undefined
-      if (!p) throw new AppError('NOT_FOUND', `منتج في الفاتورة لم يعد موجوداً (معرف ${item.productId})`)
+      const p = db.prepare('SELECT quantity FROM products WHERE id = ?').get(item.productId) as
+        { quantity: number } | undefined
+      if (!p)
+        throw new AppError('NOT_FOUND', `منتج في الفاتورة لم يعد موجوداً (معرف ${item.productId})`)
       const next = p.quantity + restorable
-      db.prepare(`UPDATE products SET quantity = ?, updated_at = datetime('now') WHERE id = ?`).run(next, item.productId)
+      db.prepare(`UPDATE products SET quantity = ?, updated_at = datetime('now') WHERE id = ?`).run(
+        next,
+        item.productId
+      )
       recordMovementV2(db, {
         productId: item.productId,
         movementType: 'SALE_CANCEL',
@@ -231,14 +304,19 @@ export function cancelSale(db: Database.Database, saleId: number, reason: string
  * Partial/full return of one sale line. History is never deleted: a `returns`
  * row records the refund and stock goes back with a RETURN movement.
  */
-export function recordReturn(db: Database.Database, input: ReturnInput): { sale: Sale; ret: ReturnRecord } {
+export function recordReturn(
+  db: Database.Database,
+  input: ReturnInput
+): { sale: Sale; ret: ReturnRecord } {
   const qty = positiveInt(input.quantity, 'كمية الإرجاع')
   const why = requireReason(input.reason)
 
   const tx = db.transaction(() => {
-    const saleRow = db.prepare(`${SALE_SELECT} WHERE s.id = ?`).get(input.saleId) as SaleRow | undefined
+    const saleRow = db.prepare(`${SALE_SELECT} WHERE s.id = ?`).get(input.saleId) as
+      SaleRow | undefined
     if (!saleRow) throw new AppError('NOT_FOUND', 'الفاتورة غير موجودة')
-    if (saleRow.status === 'CANCELLED') throw new AppError('VALIDATION', 'لا يمكن إرجاع أصناف من فاتورة ملغاة')
+    if (saleRow.status === 'CANCELLED')
+      throw new AppError('VALIDATION', 'لا يمكن إرجاع أصناف من فاتورة ملغاة')
     const itemRow = db
       .prepare(
         `SELECT si.id, si.sale_id, si.product_id, p.code AS product_code, p.name AS product_name,
@@ -248,18 +326,36 @@ export function recordReturn(db: Database.Database, input: ReturnInput): { sale:
       )
       .get(input.saleItemId, input.saleId) as SaleItemRow | undefined
     if (!itemRow) throw new AppError('NOT_FOUND', 'صنف الفاتورة غير موجود')
-    if (itemRow.returnedQty + qty > itemRow.quantity) {
-      throw new AppError('VALIDATION', `لا يمكن إرجاع أكثر من المبيعة (${itemRow.quantity - itemRow.returnedQty} متاحة للإرجاع)`)
+    if (itemRow.returned_qty + qty > itemRow.quantity) {
+      throw new AppError(
+        'VALIDATION',
+        `لا يمكن إرجاع أكثر من المبيعة (${itemRow.quantity - itemRow.returned_qty} متاحة للإرجاع)`
+      )
     }
 
-    const refunded = qty * itemRow.unitPrice
-    const p = db.prepare('SELECT quantity FROM products WHERE id = ?').get(itemRow.productId) as { quantity: number }
+    const refunded = qty * itemRow.unit_price
+    const p = db.prepare('SELECT quantity FROM products WHERE id = ?').get(itemRow.product_id) as {
+      quantity: number
+    }
     const next = p.quantity + qty
-    db.prepare(`UPDATE products SET quantity = ?, updated_at = datetime('now') WHERE id = ?`).run(next, itemRow.productId)
-    db.prepare('UPDATE sale_items SET returned_qty = returned_qty + ? WHERE id = ?').run(qty, itemRow.id)
+    db.prepare(`UPDATE products SET quantity = ?, updated_at = datetime('now') WHERE id = ?`).run(
+      next,
+      itemRow.product_id
+    )
+    db.prepare('UPDATE sale_items SET returned_qty = returned_qty + ? WHERE id = ?').run(
+      qty,
+      itemRow.id
+    )
 
     db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('return_counter', '0')`).run()
-    const rc = Number((db.prepare(`SELECT value FROM settings WHERE key = 'return_counter'`).get() as { value: string }).value) + 1
+    const rc =
+      Number(
+        (
+          db.prepare(`SELECT value FROM settings WHERE key = 'return_counter'`).get() as {
+            value: string
+          }
+        ).value
+      ) + 1
     db.prepare(`UPDATE settings SET value = ? WHERE key = 'return_counter'`).run(String(rc))
     const returnNo = `RV-${String(rc).padStart(6, '0')}`
 
@@ -270,7 +366,7 @@ export function recordReturn(db: Database.Database, input: ReturnInput): { sale:
       )
       .run(returnNo, input.saleId, itemRow.id, qty, refunded, why)
     recordMovementV2(db, {
-      productId: itemRow.productId,
+      productId: itemRow.product_id,
       movementType: 'RETURN',
       quantityChange: qty,
       balanceAfter: next,
@@ -278,11 +374,22 @@ export function recordReturn(db: Database.Database, input: ReturnInput): { sale:
       refType: 'RETURN',
       refId: Number(info.lastInsertRowid)
     })
-    logAudit(db, 'RECORD_RETURN', 'sale', input.saleId, `${returnNo} — ${qty} × ${itemRow.product_name} (${refunded} دج)`)
+    logAudit(
+      db,
+      'RECORD_RETURN',
+      'sale',
+      input.saleId,
+      `${returnNo} — ${qty} × ${itemRow.product_name} (${refunded} دج)`
+    )
     return {
       ret: {
-        id: Number(info.lastInsertRowid), returnNo, saleId: input.saleId,
-        saleItemId: itemRow.id, quantity: qty, amountRefunded: refunded, reason: why,
+        id: Number(info.lastInsertRowid),
+        returnNo,
+        saleId: input.saleId,
+        saleItemId: itemRow.id,
+        quantity: qty,
+        amountRefunded: refunded,
+        reason: why,
         createdAt: ''
       } satisfies ReturnRecord,
       sale: getSale(db, input.saleId)!
@@ -293,10 +400,27 @@ export function recordReturn(db: Database.Database, input: ReturnInput): { sale:
 
 export function listReturnsForSale(db: Database.Database, saleId: number): ReturnRecord[] {
   const rows = db
-    .prepare('SELECT id, return_no, sale_id, sale_item_id, quantity, amount_refunded, reason, created_at FROM returns WHERE sale_id = ? ORDER BY id')
-    .all(saleId) as Array<{ id: number; return_no: string; sale_id: number; sale_item_id: number; quantity: number; amount_refunded: number; reason: string; created_at: string }>
+    .prepare(
+      'SELECT id, return_no, sale_id, sale_item_id, quantity, amount_refunded, reason, created_at FROM returns WHERE sale_id = ? ORDER BY id'
+    )
+    .all(saleId) as Array<{
+    id: number
+    return_no: string
+    sale_id: number
+    sale_item_id: number
+    quantity: number
+    amount_refunded: number
+    reason: string
+    created_at: string
+  }>
   return rows.map((r) => ({
-    id: r.id, returnNo: r.return_no, saleId: r.sale_id, saleItemId: r.sale_item_id,
-    quantity: r.quantity, amountRefunded: r.amount_refunded, reason: r.reason, createdAt: r.created_at
+    id: r.id,
+    returnNo: r.return_no,
+    saleId: r.sale_id,
+    saleItemId: r.sale_item_id,
+    quantity: r.quantity,
+    amountRefunded: r.amount_refunded,
+    reason: r.reason,
+    createdAt: r.created_at
   }))
 }

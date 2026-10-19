@@ -272,6 +272,8 @@ export interface Purchase {
   supplierName: string
   total: number
   paid: number
+  /** total − paid (initial amount due; later payments are in supplier_payments). */
+  balance: number
   note: string | null
   createdAt: string
   items: PurchaseItem[]

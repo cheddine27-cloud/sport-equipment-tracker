@@ -52,6 +52,14 @@ export function categoryIdByName(db: Database.Database, name: string): number {
   return row.id
 }
 
+/** Returns the id of a seeded EXPENSE category by exact Arabic name. */
+export function expenseCategoryIdByName(db: Database.Database, name: string): number {
+  const row = db.prepare('SELECT id FROM expense_categories WHERE name = ?').get(name) as
+    { id: number } | undefined
+  if (!row) throw new Error(`فئة المصروف «${name}» غير موجودة — زرع الفئات فشل`)
+  return row.id
+}
+
 /** Builds a valid ProductInput with overridable fields. No fake shop data —
  * these are obviously synthetic test values. */
 export function makeProductInput(

@@ -46,14 +46,36 @@ export function setShopSettings(db: Database.Database, input: Partial<ShopSettin
   return getShopSettings(db)
 }
 
-export function getPriceHistory(db: Database.Database, productId: number, limit = 100): Array<{
-  id: number; productId: number; field: 'purchase_price' | 'sale_price' | 'external_price';
-  oldValue: number; newValue: number; changedAt: string
+export function getPriceHistory(
+  db: Database.Database,
+  productId: number,
+  limit = 100
+): Array<{
+  id: number
+  productId: number
+  field: 'purchase_price' | 'sale_price' | 'external_price'
+  oldValue: number
+  newValue: number
+  changedAt: string
 }> {
   const rows = db
-    .prepare('SELECT id, product_id, field, old_value, new_value, changed_at FROM price_history WHERE product_id = ? ORDER BY id DESC LIMIT ?')
-    .all(productId, limit) as Array<{ id: number; product_id: number; field: 'purchase_price' | 'sale_price' | 'external_price'; old_value: number; new_value: number; changed_at: string }>
+    .prepare(
+      'SELECT id, product_id, field, old_value, new_value, changed_at FROM price_history WHERE product_id = ? ORDER BY id DESC LIMIT ?'
+    )
+    .all(productId, limit) as Array<{
+    id: number
+    product_id: number
+    field: 'purchase_price' | 'sale_price' | 'external_price'
+    old_value: number
+    new_value: number
+    changed_at: string
+  }>
   return rows.map((r) => ({
-    id: r.id, productId: r.product_id, field: r.field, oldValue: r.old_value, newValue: r.new_value, changedAt: r.changed_at
+    id: r.id,
+    productId: r.product_id,
+    field: r.field,
+    oldValue: r.old_value,
+    newValue: r.new_value,
+    changedAt: r.changed_at
   }))
 }

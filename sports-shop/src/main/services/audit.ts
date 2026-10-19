@@ -16,7 +16,10 @@ export function logAudit(
   )
 }
 
-export function recentAuditEntries(db: Database.Database, limit = 200): Array<{
+export function recentAuditEntries(
+  db: Database.Database,
+  limit = 200
+): Array<{
   id: number
   action: string
   entity: string

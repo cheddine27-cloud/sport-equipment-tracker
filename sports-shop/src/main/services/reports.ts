@@ -49,15 +49,21 @@ export function reportSummary(db: Database.Database, from: string, to: string): 
     .get() as Record<string, number>
 
   const purchasesRow = db
-    .prepare(`SELECT COALESCE(SUM(total), 0) AS t FROM purchases WHERE date(created_at) BETWEEN ? AND ?`)
+    .prepare(
+      `SELECT COALESCE(SUM(total), 0) AS t FROM purchases WHERE date(created_at) BETWEEN ? AND ?`
+    )
     .get(from, to) as Record<string, number>
 
   const revenue = num(sales.revenue)
   const discounts = num(sales.discounts)
   const refunds = num(refundsRow.refunds)
+  // COGS is computed over NET sold units (quantity − returned_qty), so the
+  // refund must NOT be subtracted again from gross profit — that would double
+  // count it. Gross = Σ(unit_price × net qty) − Σ(cogs_snapshot × net qty),
+  // which equals revenue − discounts − refunds − cogs(net).
   const cogs = num(cogsRow.cogs)
   const expensesTotal = sumExpenses(db, from, to)
-  const grossProfit = revenue - cogs - discounts - refunds
+  const grossProfit = revenue - cogs - refunds
   return {
     from,
     to,
@@ -77,8 +83,17 @@ export function reportSummary(db: Database.Database, from: string, to: string): 
 }
 
 /** Daily buckets for a period — used by the reports charts/tables. */
-export function dailySales(db: Database.Database, from: string, to: string): Array<{
-  day: string; revenue: number; discount: number; paid: number; count: number; cogs: number
+export function dailySales(
+  db: Database.Database,
+  from: string,
+  to: string
+): Array<{
+  day: string
+  revenue: number
+  discount: number
+  paid: number
+  count: number
+  cogs: number
 }> {
   const rows = db
     .prepare(
@@ -90,14 +105,38 @@ export function dailySales(db: Database.Database, from: string, to: string): Arr
        FROM sales s WHERE s.status = 'COMPLETED' AND date(s.created_at) BETWEEN ? AND ?
        GROUP BY day ORDER BY day`
     )
-    .all(from, to) as Array<{ day: string; revenue: number; discount: number; paidv: number; n: number; cogs: number }>
+    .all(from, to) as Array<{
+    day: string
+    revenue: number
+    discount: number
+    paidv: number
+    n: number
+    cogs: number
+  }>
   return rows.map((r) => ({
-    day: r.day, revenue: r.revenue, discount: r.discount, paid: r.paidv, count: r.n, cogs: r.cogs
+    day: r.day,
+    revenue: r.revenue,
+    discount: r.discount,
+    paid: r.paidv,
+    count: r.n,
+    cogs: r.cogs
   }))
 }
 
 /** Monthly buckets keyed by YYYY-MM. */
-export function monthlySales(db: Database.Database, from: string, to: string): Array<{ month: string; revenue: number; discount: number; paid: number; count: number; cogs: number; expenses: number }> {
+export function monthlySales(
+  db: Database.Database,
+  from: string,
+  to: string
+): Array<{
+  month: string
+  revenue: number
+  discount: number
+  paid: number
+  count: number
+  cogs: number
+  expenses: number
+}> {
   const salesRows = db
     .prepare(
       `SELECT strftime('%Y-%m', created_at) AS m, SUM(total) AS revenue, SUM(discount) AS discount,
@@ -105,7 +144,13 @@ export function monthlySales(db: Database.Database, from: string, to: string): A
        FROM sales WHERE status = 'COMPLETED' AND date(created_at) BETWEEN ? AND ?
        GROUP BY m ORDER BY m`
     )
-    .all(from, to) as Array<{ m: string; revenue: number; discount: number; paidv: number; n: number }>
+    .all(from, to) as Array<{
+    m: string
+    revenue: number
+    discount: number
+    paidv: number
+    n: number
+  }>
   const cogsRows = db
     .prepare(
       `SELECT strftime('%Y-%m', s.created_at) AS m,
@@ -124,7 +169,12 @@ export function monthlySales(db: Database.Database, from: string, to: string): A
   const cogsBy = new Map(cogsRows.map((r) => [r.m, r.cogs]))
   const expBy = new Map(expRows.map((r) => [r.m, r.e]))
   return salesRows.map((r) => ({
-    month: r.m, revenue: r.revenue, discount: r.discount, paid: r.paidv, count: r.n,
-    cogs: cogsBy.get(r.m) ?? 0, expenses: expBy.get(r.m) ?? 0
+    month: r.m,
+    revenue: r.revenue,
+    discount: r.discount,
+    paid: r.paidv,
+    count: r.n,
+    cogs: cogsBy.get(r.m) ?? 0,
+    expenses: expBy.get(r.m) ?? 0
   }))
 }
