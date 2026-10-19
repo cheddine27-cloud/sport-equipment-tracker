@@ -382,6 +382,10 @@ export function migrate(db: Database.Database): void {
     `INSERT INTO settings (key, value) VALUES ('schema_version', ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`
   ).run(String(LATEST_SCHEMA_VERSION))
+
+  // Persist the version in PRAGMA user_version too — used by the backup
+  // restore validator to reject databases from newer app releases.
+  db.pragma(`user_version = ${LATEST_SCHEMA_VERSION}`)
 }
 
 /** Reads a setting value; returns null when the key does not exist. */
