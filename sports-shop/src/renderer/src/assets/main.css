@@ -385,7 +385,7 @@ button {
 
 .table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .table th, .table .td-pad { text-align: right; }
-.table th { padding: .55rem .6rem; color: #5a6residual478; border-bottom: 2px solid #e3e8f0; font-weight: 600; }
+.table th { padding: .55rem .6rem; color: #5a6478; border-bottom: 2px solid #e3e8f0; font-weight: 600; }
 .table td { padding: .55rem .6rem; border-bottom: 1px solid #eef1f6; }
 .row-selectable { cursor: pointer; }
 .row-selectable:hover { background: #f4f7fb; }
@@ -394,7 +394,6 @@ button {
 .low-qty { color: #c62828; font-weight: 700; }
 .pos { color: #1b7a3d; font-weight: 600; }
 .neg { color: #c62828; font-weight: 600; }
-.muted { color: #6b7а; }
 .muted { color: #6b7688; }
 .empty-hint { padding: 1rem 0; line-height: 1.8; }
 
@@ -441,6 +440,7 @@ button {
 .stock-num { font-size: 1.6rem; font-weight: 800; color: #1a4fa3; }
 .stock-box.low .stock-num { color: #c62828; }
 .stock-cap { font-size: .8rem; color: #44506b; }
+.stock-min { font-size: .85rem; color: #6b7688; }
 .low-warning { color: #c62828; font-weight: 600; }
 .kv-list { margin: 0; }
 .kv-row { display: flex; justify-content: space-between; gap: 1rem; border-bottom: 1px dashed #e3e8f0; padding: .35rem 0; }

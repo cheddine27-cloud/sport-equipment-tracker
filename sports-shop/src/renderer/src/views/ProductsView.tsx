@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Category, Product, ProductInput, ProductUpdate } from '../../../shared/types'
 import { formatDZD } from '../lib/format'
 import { unwrap } from '../lib/db-client'
-import { Alert, Modal } from '../components/ui'
+import { Alert, ConfirmDialog, Modal } from '../components/ui'
 import ProductForm from './ProductForm'
 import ProductDetail from './ProductDetail'
 import { CorrectStockDialog, ReceiveStockDialog } from './StockDialogs'
@@ -26,6 +26,13 @@ function ProductsView(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [confirmToggle, setConfirmToggle] = useState<number | null>(null)
+
+  // Keep the latest product row for the id being confirmed (avoids stale state).
+  const confirmTarget = useMemo(
+    () => products.find((p) => p.id === confirmToggle) ?? null,
+    [products, confirmToggle]
+  )
 
   const load = useCallback(async (): Promise<void> => {
     try {
@@ -74,12 +81,13 @@ function ProductsView(): React.JSX.Element {
     }
   }
 
-  async function toggleActive(p: Product): Promise<void> {
+  async function doToggleActive(p: Product): Promise<void> {
     const label = p.active ? 'تعطيل' : 'إعادة تفعيل'
-    if (!window.confirm(`هل تريد ${label} المنتج «${p.name}»؟ لن تُحذف أي بيانات أو سجل حركات.`)) return
+    setConfirmToggle(null)
     setBusy(true)
     try {
-      const { quantity: _q, ...rest } = p
+      const { quantity: _q, categoryName: _c, ...rest } =
+        p as Product & { categoryName?: string }
       await unwrap(window.desktop.products.update({ ...rest, active: !p.active }))
       setNotice(`تم ${label} «${p.name}».`)
       await load()
@@ -184,7 +192,7 @@ function ProductsView(): React.JSX.Element {
               onEdit={() => setMode({ kind: 'edit', product: selected })}
               onReceive={() => setMode({ kind: 'receive', product: selected })}
               onCorrect={() => setMode({ kind: 'correct', product: selected })}
-              onToggleActive={() => void toggleActive(selected)}
+              onToggleActive={() => setConfirmToggle(selected.id)}
             />
           ) : (
             <p className="muted">اختر منتجاً من القائمة لعرض تفاصيله وتاريخ حركاته.</p>
@@ -243,6 +251,16 @@ function ProductsView(): React.JSX.Element {
             onClose={() => setMode({ kind: 'list' })}
           />
         </Modal>
+      )}
+
+      {confirmTarget && (
+        <ConfirmDialog
+          title={confirmTarget.active ? 'تعطيل منتج' : 'إعادة تفعيل منتج'}
+          message={`هل تريد ${confirmTarget.active ? 'تعطيل' : 'إعادة تفعيل'} المنتج «${confirmTarget.name}»؟ لن تُحذف أي بيانات أو سجل حركات.`}
+          confirmLabel={confirmTarget.active ? 'تعطيل' : 'إعادة تفعيل'}
+          onConfirm={() => void doToggleActive(confirmTarget)}
+          onCancel={() => setConfirmToggle(null)}
+        />
       )}
     </div>
   )
