@@ -15,7 +15,9 @@ interface ProductFormProps {
   initial?: Product
   saving: boolean
   serverError: string | null
-  onSave: (input: ReturnType<typeof productFormToCreateInput> | ReturnType<typeof productFormToUpdateInput>) => void
+  onSave: (
+    input: ReturnType<typeof productFormToCreateInput> | ReturnType<typeof productFormToUpdateInput>
+  ) => void
   onCancel: () => void
 }
 
@@ -49,8 +51,10 @@ function ProductForm({
   const [v, setV] = useState<ProductFormValues>(initial ? toFormValues(initial) : emptyProductForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const set = (key: keyof ProductFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setV((old) => ({ ...old, [key]: e.target.value }))
+  const set =
+    (key: keyof ProductFormValues) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setV((old) => ({ ...old, [key]: e.target.value }))
 
   function submit(e: React.FormEvent): void {
     e.preventDefault()
@@ -64,7 +68,13 @@ function ProductForm({
     )
   }
 
-  const num = (key: keyof ProductFormValues, label: string, required = true, disabled = false, hint?: string) => (
+  const num = (
+    key: keyof ProductFormValues,
+    label: string,
+    required = true,
+    disabled = false,
+    hint?: string
+  ): React.JSX.Element => (
     <Field label={label} htmlFor={`f-${key}`} required={required} hint={hint}>
       <input
         id={`f-${key}`}
@@ -81,9 +91,21 @@ function ProductForm({
     </Field>
   )
 
-  const txt = (key: keyof ProductFormValues, label: string, required = false, placeholder = '') => (
+  const txt = (
+    key: keyof ProductFormValues,
+    label: string,
+    required = false,
+    placeholder = ''
+  ): React.JSX.Element => (
     <Field label={label} htmlFor={`f-${key}`} required={required}>
-      <input id={`f-${key}`} type="text" value={v[key]} onChange={set(key)} placeholder={placeholder} maxLength={200} />
+      <input
+        id={`f-${key}`}
+        type="text"
+        value={v[key]}
+        onChange={set(key)}
+        placeholder={placeholder}
+        maxLength={200}
+      />
     </Field>
   )
 
@@ -117,11 +139,21 @@ function ProductForm({
       {num('externalPrice', 'سعر البيع الخارجي / الإلكتروني')}
 
       <div className="form-section-title">المخزون</div>
-      {isEdit ? (
-        num('openingQuantity', 'الكمية الحالية في المخزون', true, true, 'تتغيّر فقط عبر استلام دفعة أو تصحيح مخزون مسجّل')
-      ) : (
-        num('openingQuantity', 'الرصيد الافتتاحي', true, false, 'يسجَّل كحركة مخزون افتتاحية قابلة للتدقيق')
-      )}
+      {isEdit
+        ? num(
+            'openingQuantity',
+            'الكمية الحالية في المخزون',
+            true,
+            true,
+            'تتغيّر فقط عبر استلام دفعة أو تصحيح مخزون مسجّل'
+          )
+        : num(
+            'openingQuantity',
+            'الرصيد الافتتاحي',
+            true,
+            false,
+            'يسجَّل كحركة مخزون افتتاحية قابلة للتدقيق'
+          )}
       {num('minStock', 'حد التنبيه لأدنى مخزون')}
 
       <div className="form-actions">

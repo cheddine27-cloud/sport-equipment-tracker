@@ -15,11 +15,17 @@ afterEach(cleanupAll)
 describe('database initialization & migrations', () => {
   it('creates the expected tables on first migration', () => {
     const db = createTestDb()
-    const tables = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-      .all() as Array<{ name: string }>
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as Array<{
+      name: string
+    }>
     const names = tables.map((t) => t.name)
-    for (const expected of ['categories', 'products', 'stock_movements', 'settings', 'schema_migrations']) {
+    for (const expected of [
+      'categories',
+      'products',
+      'stock_movements',
+      'settings',
+      'schema_migrations'
+    ]) {
       expect(names).toContain(expected)
     }
   })
@@ -36,11 +42,7 @@ describe('database initialization & migrations', () => {
       name: string
     }>
     expect(rows.map((r) => r.name)).toEqual([...INITIAL_CATEGORIES])
-    expect(rows.map((r) => r.name)).toEqual([
-      'الملابس الرياضية',
-      'العتاد الرياضي',
-      'شبه الطبي'
-    ])
+    expect(rows.map((r) => r.name)).toEqual(['الملابس الرياضية', 'العتاد الرياضي', 'شبه الطبي'])
   })
 
   it('is safe to run migrate() more than once (idempotent seeding)', () => {
@@ -57,8 +59,7 @@ describe('database initialization & migrations', () => {
   it('records the schema version in settings metadata', () => {
     const db = createTestDb()
     const row = db.prepare("SELECT value FROM settings WHERE key = 'schema_version'").get() as
-      | { value: string }
-      | undefined
+      { value: string } | undefined
     if (row) {
       expect(Number(row.value)).toBe(LATEST_SCHEMA_VERSION)
     } else {
@@ -78,7 +79,9 @@ describe('database initialization & migrations', () => {
     const db1 = new Database(file)
     migrate(db1)
     const catId = (
-      db1.prepare('SELECT id FROM categories WHERE name = ?').get('العتاد الرياضي') as { id: number }
+      db1.prepare('SELECT id FROM categories WHERE name = ?').get('العتاد الرياضي') as {
+        id: number
+      }
     ).id
     db1
       .prepare(

@@ -3,9 +3,19 @@ import type { ReactNode } from 'react'
 
 /** Shared small UI primitives used by the product/inventory screens. */
 
-export function Alert({ kind, children }: { kind: 'error' | 'success'; children: ReactNode }): React.JSX.Element | null {
+export function Alert({
+  kind,
+  children
+}: {
+  kind: 'error' | 'success'
+  children: ReactNode
+}): React.JSX.Element | null {
   if (!children) return null
-  return <div className={`alert alert-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>{children}</div>
+  return (
+    <div className={`alert alert-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>
+      {children}
+    </div>
+  )
 }
 
 export function Field({
@@ -57,13 +67,6 @@ export function Modal({
   )
 }
 
-export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
-  OPENING: 'رصيد افتتاحي',
-  RECEIPT: 'استلام دفعة',
-  CORRECTION_UP: 'تصحيح بالزيادة',
-  CORRECTION_DOWN: 'تصحيح بالعجز'
-}
-
 /** Accessible in-app confirmation dialog (replaces window.confirm). */
 export function ConfirmDialog({
   title,
@@ -112,15 +115,4 @@ export function ConfirmDialog({
       </div>
     </div>
   )
-}
-
-/** Formats SQLite `datetime('now')` (UTC) as local Arabic date/time. */
-export function formatDateTime(utc: string): string {
-  const d = new Date(utc.includes('T') ? utc : utc.replace(' ', 'T') + 'Z')
-  if (Number.isNaN(d.getTime())) return utc
-  return new Intl.DateTimeFormat('ar-DZ', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    numberingSystem: 'latn'
-  }).format(d)
 }

@@ -55,17 +55,17 @@ describe('products: creation', () => {
   it('rejects negative prices', () => {
     const db = createTestDb()
     for (const field of ['purchasePrice', 'salePrice', 'externalPrice'] as const) {
-      expect(() => createProduct(db, makeProductInput(db, { [field]: -5, code: `NEG-${field}` }))).toThrow(
-        AppError
-      )
+      expect(() =>
+        createProduct(db, makeProductInput(db, { [field]: -5, code: `NEG-${field}` }))
+      ).toThrow(AppError)
     }
   })
 
   it('rejects non-integer and negative quantities', () => {
     const db = createTestDb()
-    expect(() => createProduct(db, makeProductInput(db, { code: 'Q-NEG', openingQuantity: -1 }))).toThrow(
-      AppError
-    )
+    expect(() =>
+      createProduct(db, makeProductInput(db, { code: 'Q-NEG', openingQuantity: -1 }))
+    ).toThrow(AppError)
     expect(() =>
       createProduct(db, makeProductInput(db, { code: 'Q-FRAC', openingQuantity: 2.5 }))
     ).toThrow(AppError)
@@ -77,9 +77,9 @@ describe('products: creation', () => {
   it('rejects unknown categories', () => {
     const db = createTestDb()
     const bogus = categoryIdByName(db, 'العتاد الرياضي') + 999
-    expect(() => createProduct(db, makeProductInput(db, { code: 'BADCAT', categoryId: bogus }))).toThrow(
-      AppError
-    )
+    expect(() =>
+      createProduct(db, makeProductInput(db, { code: 'BADCAT', categoryId: bogus }))
+    ).toThrow(AppError)
   })
 
   it('lists the three seeded categories', () => {
@@ -124,7 +124,7 @@ describe('products: update', () => {
     expect(getProduct(db, p.id)).not.toBeNull() // history preserved
   })
 
-  it('rejects renaming to another product\'s code', () => {
+  it("rejects renaming to another product's code", () => {
     const db = createTestDb()
     createProduct(db, makeProductInput(db, { code: 'A-1' }))
     const b = createProduct(db, makeProductInput(db, { code: 'B-2' }))
@@ -168,8 +168,12 @@ describe('stock: authorized correction', () => {
   it('requires a reason', () => {
     const db = createTestDb()
     const p = createProduct(db, makeProductInput(db, { openingQuantity: 10 }))
-    expect(() => correctStock(db, { productId: p.id, newQuantity: 8, reason: '' })).toThrow(AppError)
-    expect(() => correctStock(db, { productId: p.id, newQuantity: 8, reason: '   ' })).toThrow(AppError)
+    expect(() => correctStock(db, { productId: p.id, newQuantity: 8, reason: '' })).toThrow(
+      AppError
+    )
+    expect(() => correctStock(db, { productId: p.id, newQuantity: 8, reason: '   ' })).toThrow(
+      AppError
+    )
   })
 
   it('records the correct signed movement (down and up)', () => {
@@ -194,16 +198,18 @@ describe('stock: authorized correction', () => {
   it('prevents the stock from becoming negative', () => {
     const db = createTestDb()
     const p = createProduct(db, makeProductInput(db, { openingQuantity: 3 }))
-    expect(() => correctStock(db, { productId: p.id, newQuantity: -1, reason: 'خطأ' })).toThrow(AppError)
+    expect(() => correctStock(db, { productId: p.id, newQuantity: -1, reason: 'خطأ' })).toThrow(
+      AppError
+    )
     expect(getProduct(db, p.id)?.quantity).toBe(3)
   })
 
   it('rejects a no-op correction equal to current stock', () => {
     const db = createTestDb()
     const p = createProduct(db, makeProductInput(db, { openingQuantity: 10 }))
-    expect(() => correctStock(db, { productId: p.id, newQuantity: 10, reason: 'لا تغيير' })).toThrow(
-      AppError
-    )
+    expect(() =>
+      correctStock(db, { productId: p.id, newQuantity: 10, reason: 'لا تغيير' })
+    ).toThrow(AppError)
   })
 })
 
@@ -236,7 +242,9 @@ describe('transactions: rollback on failure', () => {
       WHEN NEW.movement_type = 'OPENING'
       BEGIN SELECT RAISE(ABORT, 'test-forced-failure'); END;
     `)
-    expect(() => createProduct(db, makeProductInput(db, { code: 'RB-1', openingQuantity: 10 }))).toThrow()
+    expect(() =>
+      createProduct(db, makeProductInput(db, { code: 'RB-1', openingQuantity: 10 }))
+    ).toThrow()
     db.exec('DROP TRIGGER fail_opening')
     // No orphan product row survived the failed transaction.
     expect(getProduct(db, 1)).toBeNull()
@@ -248,7 +256,10 @@ describe('search & filters', () => {
   it('filters by search text and category', () => {
     const db = createTestDb()
     const clothes = categoryIdByName(db, 'الملابس الرياضية')
-    createProduct(db, makeProductInput(db, { code: 'S-1', name: 'قميص رياضي', categoryId: clothes }))
+    createProduct(
+      db,
+      makeProductInput(db, { code: 'S-1', name: 'قميص رياضي', categoryId: clothes })
+    )
     createProduct(db, makeProductInput(db, { code: 'S-2', name: 'قفاز حارس مرمى' }))
     expect(listProducts(db, { search: 'قفاز' })).toHaveLength(1)
     expect(listProducts(db, { search: 'S-1' })).toHaveLength(1)

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { StockMovementWithProduct } from '../../../shared/types'
 import { unwrap } from '../lib/db-client'
-import { Alert, MOVEMENT_TYPE_LABELS, formatDateTime } from '../components/ui'
+import { Alert } from '../components/ui'
+import { MOVEMENT_TYPE_LABELS, formatDateTime } from '../lib/format'
 
 /** المخزون — recent stock movements across all products. */
 function InventoryView(): React.JSX.Element {
@@ -18,7 +19,13 @@ function InventoryView(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
-    void load()
+    // Reset happens inside the async continuation to avoid a synchronous
+    // state update during the effect body.
+    void (async () => {
+      await Promise.resolve()
+      setMovements(null)
+      await load()
+    })()
   }, [load])
 
   return (
@@ -35,8 +42,8 @@ function InventoryView(): React.JSX.Element {
           <p className="muted">جارٍ التحميل…</p>
         ) : movements && movements.length === 0 ? (
           <p className="muted empty-hint">
-            لا توجد حركات مخزون بعد. تُسجَّل الحركات تلقائياً عند إنشاء منتج برصيد افتتاحي، أو استلام دفعة، أو
-            تصحيح مخزون من قسم «المنتجات».
+            لا توجد حركات مخزون بعد. تُسجَّل الحركات تلقائياً عند إنشاء منتج برصيد افتتاحي، أو
+            استلام دفعة، أو تصحيح مخزون من قسم «المنتجات».
           </p>
         ) : (
           <table className="table">
@@ -56,7 +63,9 @@ function InventoryView(): React.JSX.Element {
                 <tr key={m.id}>
                   <td>{formatDateTime(m.createdAt)}</td>
                   <td>{m.productName}</td>
-                  <td dir="ltr" className="mono">{m.productCode}</td>
+                  <td dir="ltr" className="mono">
+                    {m.productCode}
+                  </td>
                   <td>{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</td>
                   <td className={m.quantityChange >= 0 ? 'pos' : 'neg'}>
                     {m.quantityChange > 0 ? `+${m.quantityChange}` : m.quantityChange}

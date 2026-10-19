@@ -85,7 +85,7 @@ export function productFormToUpdateInput(
   id: number,
   active: boolean
 ): ProductUpdate {
-  const input = productFormToCreateInput(v)
-  const { openingQuantity: _drop, ...rest } = input
+  const { openingQuantity, ...rest } = productFormToCreateInput(v)
+  void openingQuantity
   return { ...rest, id, active }
 }

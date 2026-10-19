@@ -180,8 +180,9 @@ export function listProducts(
   if (where.length) sql += ' WHERE ' + where.join(' AND ')
   sql += ' ORDER BY p.name COLLATE NOCASE'
 
-  const rows = db.prepare(sql).all(...params) as ProductRow[] & Array<{ category_name: string }>
-  return rows.map((r) => ({ ...mapProduct(r), categoryName: (r as { category_name: string }).category_name }))
+  type ListRow = ProductRow & { category_name: string }
+  const rows = db.prepare(sql).all(...params) as ListRow[]
+  return rows.map((r) => ({ ...mapProduct(r), categoryName: r.category_name }))
 }
 
 export function getProduct(db: Database.Database, id: number): Product | null {
@@ -286,7 +287,14 @@ export function createProduct(db: Database.Database, input: ProductInput): Produ
       )
     const id = Number(info.lastInsertRowid)
     if (openingQuantity > 0) {
-      recordMovement(db, id, 'OPENING', openingQuantity, openingQuantity, 'رصيد افتتاحي عند الإنشاء')
+      recordMovement(
+        db,
+        id,
+        'OPENING',
+        openingQuantity,
+        openingQuantity,
+        'رصيد افتتاحي عند الإنشاء'
+      )
     }
     const p = getProduct(db, id)
     if (!p) throw new AppError('DB_ERROR', 'تعذّر قراءة المنتج بعد إنشائه')
@@ -387,8 +395,7 @@ export function correctStock(db: Database.Database, input: CorrectStockInput): P
 function lockAndGetQuantity(db: Database.Database, productId: number): number {
   nonNegativeInt(productId, 'معرف المنتج')
   const row = db.prepare('SELECT quantity FROM products WHERE id = ?').get(productId) as
-    | { quantity: number }
-    | undefined
+    { quantity: number } | undefined
   if (!row) throw new AppError('NOT_FOUND', 'المنتج غير موجود')
   return row.quantity
 }

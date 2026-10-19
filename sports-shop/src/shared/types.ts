@@ -129,13 +129,10 @@ export interface ProductListOptions {
 
 /** Stable, machine-readable error codes (UI maps them to Arabic messages). */
 export type AppErrorCode =
-  | 'VALIDATION'
-  | 'DUPLICATE_CODE'
-  | 'NOT_FOUND'
-  | 'NEGATIVE_STOCK'
-  | 'DB_ERROR'
+  'VALIDATION' | 'DUPLICATE_CODE' | 'NOT_FOUND' | 'NEGATIVE_STOCK' | 'DB_ERROR'
 
-export type IpcResult<T> = { ok: true; data: T } | { ok: false; code: AppErrorCode; message: string }
+export type IpcResult<T> =
+  { ok: true; data: T } | { ok: false; code: AppErrorCode; message: string }
 
 /** Thrown inside the main process; converted to an IpcResult at the IPC edge. */
 export class AppError extends Error {
@@ -145,4 +142,259 @@ export class AppError extends Error {
     this.name = 'AppError'
     this.code = code
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sales, returns, purchases, customers, suppliers, expenses, orders (v2–v5)
+// ---------------------------------------------------------------------------
+
+export type PaymentMethod = 'CASH' | 'CARD'
+export type SaleStatus = 'COMPLETED' | 'CANCELLED'
+
+export interface SaleLineInput {
+  productId: number
+  quantity: number
+  /** Unit price in integer DZD (defaults to the product sale price in UI). */
+  unitPrice: number
+}
+
+export interface SaleInput {
+  lines: SaleLineInput[]
+  /** Total discount in integer DZD, 0 ≤ discount ≤ subtotal. */
+  discount: number
+  paid: number
+  paymentMethod: PaymentMethod
+  customerName?: string | null
+  note?: string | null
+}
+
+export interface SaleItem {
+  id: number
+  saleId: number
+  productId: number
+  productCode: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  purchasePrice: number
+  returnedQty: number
+}
+
+export interface Sale {
+  id: number
+  invoiceNo: string
+  subtotal: number
+  discount: number
+  total: number
+  paid: number
+  balance: number
+  paymentMethod: PaymentMethod
+  status: SaleStatus
+  cancelledAt: string | null
+  cancelReason: string | null
+  note: string | null
+  customerId: number | null
+  customerName: string | null
+  createdAt: string
+  items: SaleItem[]
+}
+
+export interface ReturnInput {
+  saleId: number
+  saleItemId: number
+  quantity: number
+  reason: string
+}
+
+export interface ReturnRecord {
+  id: number
+  returnNo: string
+  saleId: number
+  saleItemId: number
+  quantity: number
+  amountRefunded: number
+  reason: string
+  createdAt: string
+}
+
+export interface CustomerInput {
+  name: string
+  phone?: string | null
+  address?: string | null
+  note?: string | null
+}
+
+export interface Customer extends Required<Omit<CustomerInput, 'name'>> {
+  id: number
+  name: string
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PartyBalance {
+  partyId: number
+  name: string
+  totalBilled: number
+  totalPaid: number
+  /** outstanding = billed − paid (customers); owed-to-supplier for suppliers. */
+  outstanding: number
+}
+
+export interface PurchaseLineInput {
+  productId: number
+  quantity: number
+  unitCost: number
+}
+
+export interface PurchaseInput {
+  supplierId?: number | null
+  supplierName?: string | null
+  lines: PurchaseLineInput[]
+  paid: number
+  note?: string | null
+}
+
+export interface PurchaseItem {
+  id: number
+  purchaseId: number
+  productId: number
+  productCode: string
+  productName: string
+  quantity: number
+  unitCost: number
+}
+
+export interface Purchase {
+  id: number
+  receiptNo: string
+  supplierId: number | null
+  supplierName: string
+  total: number
+  paid: number
+  note: string | null
+  createdAt: string
+  items: PurchaseItem[]
+}
+
+export interface SupplierPaymentInput {
+  purchaseId: number
+  amount: number
+  note?: string | null
+}
+
+export interface SupplierPayment {
+  id: number
+  purchaseId: number
+  amount: number
+  note: string | null
+  createdAt: string
+}
+
+export interface ExpenseInput {
+  categoryId: number
+  amount: number
+  description?: string | null
+  /** ISO date YYYY-MM-DD. */
+  spentOn: string
+}
+
+export interface Expense {
+  id: number
+  categoryId: number
+  categoryName: string
+  amount: number
+  description: string | null
+  spentOn: string
+  createdAt: string
+}
+
+export interface ExpenseCategory {
+  id: number
+  name: string
+}
+
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'DISPATCHED' | 'DELIVERED' | 'CANCELLED'
+
+export interface OrderLineInput {
+  productId: number
+  quantity: number
+  unitPrice: number
+}
+
+export interface OrderInput {
+  customerName: string
+  phone?: string | null
+  address?: string | null
+  note?: string | null
+  lines: OrderLineInput[]
+}
+
+export interface OrderItem {
+  id: number
+  orderId: number
+  productId: number
+  productCode: string
+  productName: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface Order {
+  id: number
+  orderNo: string
+  customerName: string
+  phone: string | null
+  address: string | null
+  note: string | null
+  status: OrderStatus
+  /** 0/1 — whether stock was already deducted for this order (idempotency guard). */
+  stockApplied: boolean
+  createdAt: string
+  updatedAt: string
+  items: OrderItem[]
+  total: number
+}
+
+export interface ShopSettings {
+  shopName: string
+  shopAddress: string
+  shopPhone: string
+  invoiceFooter: string
+}
+
+export interface AuditEntry {
+  id: number
+  action: string
+  entity: string
+  entityId: number | null
+  details: string | null
+  createdAt: string
+}
+
+export interface PriceHistoryEntry {
+  id: number
+  productId: number
+  field: 'purchase_price' | 'sale_price' | 'external_price'
+  oldValue: number
+  newValue: number
+  changedAt: string
+}
+
+/** Aggregated report figures — all values are integer DZD. */
+export interface ReportSummary {
+  from: string
+  to: string
+  revenue: number
+  discounts: number
+  refunds: number
+  cancelledSalesTotal: number
+  cashReceived: number
+  receivables: number
+  cogs: number
+  grossProfit: number
+  expensesTotal: number
+  netProfit: number
+  purchasesTotal: number
+  salesCount: number
 }
