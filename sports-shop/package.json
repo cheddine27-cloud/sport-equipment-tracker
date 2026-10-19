@@ -18,17 +18,20 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "test": "vitest run",
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "better-sqlite3": "^11.10.0"
+    "better-sqlite3": "^12.4.1"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.1",
     "@electron-toolkit/eslint-config-ts": "^4.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@electron/rebuild": "^3.7.2",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 
 /** Shared small UI primitives used by the product/inventory screens. */
@@ -61,6 +62,56 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   RECEIPT: 'استلام دفعة',
   CORRECTION_UP: 'تصحيح بالزيادة',
   CORRECTION_DOWN: 'تصحيح بالعجز'
+}
+
+/** Accessible in-app confirmation dialog (replaces window.confirm). */
+export function ConfirmDialog({
+  title,
+  message,
+  confirmLabel = 'تأكيد',
+  cancelLabel = 'إلغاء',
+  onConfirm,
+  onCancel
+}: {
+  title: string
+  message: ReactNode
+  confirmLabel?: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onCancel: () => void
+}): React.JSX.Element {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onCancel])
+  return (
+    <div className="modal-backdrop" onClick={onCancel}>
+      <div
+        className="modal card"
+        dir="rtl"
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <h3>{title}</h3>
+        </div>
+        <p className="confirm-box">{message}</p>
+        <div className="form-actions">
+          <button type="button" className="btn btn-primary" autoFocus onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 /** Formats SQLite `datetime('now')` (UTC) as local Arabic date/time. */
