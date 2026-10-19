@@ -44,6 +44,15 @@ export function reportSummary(db: Database.Database, from: string, to: string): 
     )
     .get(from, to) as Record<string, number>
 
+  // Cash actually received = ledger of payments minus refunds/cancel refunds.
+  const cashRow = db
+    .prepare(
+      `SELECT COALESCE(SUM(sp.amount), 0) AS c
+       FROM sale_payments sp JOIN sales s ON s.id = sp.sale_id
+       WHERE s.status = 'COMPLETED' AND date(sp.created_at) BETWEEN ? AND ?`
+    )
+    .get(from, to) as Record<string, number>
+
   const receivablesRow = db
     .prepare(`SELECT COALESCE(SUM(balance), 0) AS b FROM sales WHERE status = 'COMPLETED'`)
     .get() as Record<string, number>
@@ -71,7 +80,7 @@ export function reportSummary(db: Database.Database, from: string, to: string): 
     discounts,
     refunds,
     cancelledSalesTotal: num(cancelledRow.t),
-    cashReceived: num(sales.paidv),
+    cashReceived: num(cashRow.c),
     receivables: num(receivablesRow.b),
     cogs,
     grossProfit,

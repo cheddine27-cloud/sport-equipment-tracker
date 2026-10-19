@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
-import { createTestDb, cleanupAll, makeProductInput, categoryIdByName, expenseCategoryIdByName } from './helpers'
+import { createTestDb, cleanupAll, makeProductInput, expenseCategoryIdByName } from './helpers'
 import { createProduct } from '../src/main/services/products'
 import {
   createSale,
@@ -111,9 +111,9 @@ describe('sales', () => {
         paymentMethod: 'CASH'
       })
     ).toThrow(/المدفوع/)
-    expect(() =>
-      createSale(d, { lines: [], discount: 0, paid: 0, paymentMethod: 'CASH' })
-    ).toThrow(/فارغة/)
+    expect(() => createSale(d, { lines: [], discount: 0, paid: 0, paymentMethod: 'CASH' })).toThrow(
+      /فارغة/
+    )
   })
 
   it('records outstanding balance for partial payment', () => {
@@ -363,12 +363,15 @@ describe('expenses', () => {
   it('records expenses and sums them by period', () => {
     const d = fresh()
     const cat = expenseCategoryIdByName(d, 'إيجار')
-    createExpense(d, { categoryId: cat, amount: 20000, spentOn: '2026-10-05', description: 'إيجار أكتوبر' })
+    createExpense(d, {
+      categoryId: cat,
+      amount: 20000,
+      spentOn: '2026-10-05',
+      description: 'إيجار أكتوبر'
+    })
     createExpense(d, { categoryId: cat, amount: 5000, spentOn: '2026-09-01' })
     expect(sumExpenses(d, '2026-10-01', '2026-10-31')).toBe(20000)
-    expect(() =>
-      createExpense(d, { categoryId: cat, amount: -1, spentOn: '2026-10-05' })
-    ).toThrow()
+    expect(() => createExpense(d, { categoryId: cat, amount: -1, spentOn: '2026-10-05' })).toThrow()
     expect(() =>
       createExpense(d, { categoryId: cat, amount: 100, spentOn: 'not-a-date' })
     ).toThrow()
@@ -394,7 +397,11 @@ describe('reports', () => {
       reason: 'عيّب'
     })
     const cat = expenseCategoryIdByName(d, 'إيجار')
-    createExpense(d, { categoryId: cat, amount: 1000, spentOn: new Date().toISOString().slice(0, 10) })
+    createExpense(d, {
+      categoryId: cat,
+      amount: 1000,
+      spentOn: new Date().toISOString().slice(0, 10)
+    })
 
     const today = new Date().toISOString().slice(0, 10)
     const s = reportSummary(d, today, today)

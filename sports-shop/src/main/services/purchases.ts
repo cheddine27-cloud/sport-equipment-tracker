@@ -88,6 +88,7 @@ export function listPurchases(db: Database.Database, limit = 100): Purchase[] {
     supplierName: r.supplier_name,
     total: r.total,
     paid: r.paid,
+    balance: r.total - r.paid,
     note: r.note,
     createdAt: r.created_at,
     items: []

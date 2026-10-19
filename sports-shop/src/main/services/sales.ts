@@ -221,6 +221,13 @@ export function createSale(db: Database.Database, input: SaleInput): Sale {
       )
       .run(invoiceNo, subtotal, discount, total, paid, balance, method, note, customerName)
     const saleId = Number(saleInfo.lastInsertRowid)
+    if (paid > 0) {
+      db.prepare(`INSERT INTO sale_payments (sale_id, amount, note) VALUES (?, ?, ?)`).run(
+        saleId,
+        paid,
+        'الدفع عند إنشاء الفاتورة'
+      )
+    }
 
     const insertItem = db.prepare(
       `INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, purchase_price)
@@ -292,6 +299,21 @@ export function cancelSale(db: Database.Database, saleId: number, reason: string
     db.prepare(
       `UPDATE sales SET status = 'CANCELLED', cancelled_at = datetime('now'), cancel_reason = ? WHERE id = ?`
     ).run(why, saleId)
+    // Record the cash actually returned to the customer as a negative ledger
+    // entry. Refunds already recorded via returns were restored stock-wise;
+    // their money outflow is captured by those entries, so only the remaining
+    // unreturned portion of what the customer paid is refunded here.
+    const alreadyRefunded = db
+      .prepare(`SELECT COALESCE(SUM(amount_refunded), 0) AS r FROM returns WHERE sale_id = ?`)
+      .get(saleId) as { r: number }
+    const refundDue = Math.max(0, sale.paid - alreadyRefunded.r)
+    if (refundDue > 0) {
+      db.prepare(`INSERT INTO sale_payments (sale_id, amount, note) VALUES (?, ?, ?)`).run(
+        saleId,
+        -refundDue,
+        `إلغاء فاتورة — ${why}`
+      )
+    }
     logAudit(db, 'CANCEL_SALE', 'sale', saleId, `فاتورة ${sale.invoiceNo} — ${why}`)
     const s = getSale(db, saleId)
     if (!s) throw new AppError('DB_ERROR', 'تعذّر قراءة الفاتورة بعد الإلغاء')
@@ -365,6 +387,12 @@ export function recordReturn(
          VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(returnNo, input.saleId, itemRow.id, qty, refunded, why)
+    // Record the actual cash outflow in the payment ledger (negative entry).
+    db.prepare(`INSERT INTO sale_payments (sale_id, amount, note) VALUES (?, ?, ?)`).run(
+      input.saleId,
+      -refunded,
+      `إرجاع ${returnNo}`
+    )
     recordMovementV2(db, {
       productId: itemRow.product_id,
       movementType: 'RETURN',

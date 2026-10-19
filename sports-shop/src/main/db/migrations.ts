@@ -293,6 +293,34 @@ const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_price_history_product ON price_history(product_id);
       `)
     }
+  },
+  {
+    version: 6,
+    name: 'sale-payment-ledger',
+    up: (db) => {
+      db.exec(`
+        -- Ledger of actual payments received against sales invoices.
+        -- sales.paid stays as the amount paid AT CHECKOUT TIME; cashReceived
+        -- in reports is computed from this table so refunds can be recorded
+        -- as negative entries without rewriting history.
+        CREATE TABLE IF NOT EXISTS sale_payments (
+          id         INTEGER PRIMARY KEY AUTOINCREMENT,
+          sale_id    INTEGER NOT NULL REFERENCES sales(id),
+          amount     INTEGER NOT NULL CHECK (amount <> 0),
+          note       TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_sale_payments_sale ON sale_payments(sale_id);
+      `)
+      // Backfill: every existing sale's checkout payment becomes a ledger entry.
+      db.exec(`
+        INSERT INTO sale_payments (sale_id, amount, note, created_at)
+        SELECT s.id, s.paid, 'الدفع عند إنشاء الفاتورة', s.created_at
+        FROM sales s WHERE s.paid > 0
+        AND NOT EXISTS (SELECT 1 FROM sale_payments p WHERE p.sale_id = s.id);
+      `)
+    }
   }
 ]
 
@@ -354,6 +382,10 @@ export function migrate(db: Database.Database): void {
     `INSERT INTO settings (key, value) VALUES ('schema_version', ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`
   ).run(String(LATEST_SCHEMA_VERSION))
+
+  // Persist the version in PRAGMA user_version too — used by the backup
+  // restore validator to reject databases from newer app releases.
+  db.pragma(`user_version = ${LATEST_SCHEMA_VERSION}`)
 }
 
 /** Reads a setting value; returns null when the key does not exist. */
