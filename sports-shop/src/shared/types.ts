@@ -129,13 +129,10 @@ export interface ProductListOptions {
 
 /** Stable, machine-readable error codes (UI maps them to Arabic messages). */
 export type AppErrorCode =
-  | 'VALIDATION'
-  | 'DUPLICATE_CODE'
-  | 'NOT_FOUND'
-  | 'NEGATIVE_STOCK'
-  | 'DB_ERROR'
+  'VALIDATION' | 'DUPLICATE_CODE' | 'NOT_FOUND' | 'NEGATIVE_STOCK' | 'DB_ERROR'
 
-export type IpcResult<T> = { ok: true; data: T } | { ok: false; code: AppErrorCode; message: string }
+export type IpcResult<T> =
+  { ok: true; data: T } | { ok: false; code: AppErrorCode; message: string }
 
 /** Thrown inside the main process; converted to an IpcResult at the IPC edge. */
 export class AppError extends Error {

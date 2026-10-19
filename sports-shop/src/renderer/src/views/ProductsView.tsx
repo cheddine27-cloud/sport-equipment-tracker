@@ -69,7 +69,7 @@ function ProductsView(): React.JSX.Element {
         setSelectedId(created.id)
       } else {
         const updated = await unwrap(window.desktop.products.update(input))
-        setNotice(`تم حفظ تعديلات «${updated.name}\".`)
+        setNotice(`تم حفظ تعديلات «${updated.name}».`)
         setSelectedId(updated.id)
       }
       setMode({ kind: 'list' })
@@ -86,8 +86,11 @@ function ProductsView(): React.JSX.Element {
     setConfirmToggle(null)
     setBusy(true)
     try {
-      const { quantity: _q, categoryName: _c, ...rest } =
-        p as Product & { categoryName?: string }
+      const { quantity, categoryName, ...rest } = p as Product & {
+        categoryName?: string
+      }
+      void quantity
+      void categoryName
       await unwrap(window.desktop.products.update({ ...rest, active: !p.active }))
       setNotice(`تم ${label} «${p.name}».`)
       await load()
@@ -127,10 +130,21 @@ function ProductsView(): React.JSX.Element {
             {categoryOptions}
           </select>
           <label className="check">
-            <input type="checkbox" checked={includeInactive} onChange={(e) => setIncludeInactive(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+            />
             إظهار غير النشطة
           </label>
-          <button type="button" className="btn btn-primary" onClick={() => { setError(null); setMode({ kind: 'add' }) }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setError(null)
+              setMode({ kind: 'add' })
+            }}
+          >
             + منتج جديد
           </button>
         </div>
@@ -141,8 +155,8 @@ function ProductsView(): React.JSX.Element {
           <Alert kind="error">{mode.kind === 'list' ? error : null}</Alert>
           {products.length === 0 ? (
             <p className="muted empty-hint">
-              لا توجد منتجات مطابقة. قاعدة البيانات جاهزة — أضف أول منتج بزر «+ منتج جديد». (لا نضع بيانات وهمية
-              عمداً.)
+              لا توجد منتجات مطابقة. قاعدة البيانات جاهزة — أضف أول منتج بزر «+ منتج جديد». (لا نضع
+              بيانات وهمية عمداً.)
             </p>
           ) : (
             <table className="table">
@@ -166,7 +180,9 @@ function ProductsView(): React.JSX.Element {
                     tabIndex={0}
                     onKeyDown={(e) => e.key === 'Enter' && setSelectedId(p.id)}
                   >
-                    <td dir="ltr" className="mono">{p.code}</td>
+                    <td dir="ltr" className="mono">
+                      {p.code}
+                    </td>
                     <td>{p.name}</td>
                     <td>{p.categoryName}</td>
                     <td className={p.quantity <= p.minStock ? 'low-qty' : ''}>{p.quantity}</td>

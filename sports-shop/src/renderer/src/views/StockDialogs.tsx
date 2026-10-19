@@ -33,7 +33,13 @@ export function ReceiveStockDialog({ product, onDone, onClose }: DialogProps): R
     setBusy(true)
     setError(null)
     try {
-      await unwrap(window.desktop.stock.receive({ productId: product.id, quantity: q, reason: note.trim() || null }))
+      await unwrap(
+        window.desktop.stock.receive({
+          productId: product.id,
+          quantity: q,
+          reason: note.trim() || null
+        })
+      )
       onDone()
     } catch (e) {
       setError((e as Error).message)
@@ -60,18 +66,37 @@ export function ReceiveStockDialog({ product, onDone, onClose }: DialogProps): R
       }}
     >
       <p className="muted">
-        المنتج: <strong>{product.name}</strong> ({product.code}) — الكمية الحالية: <strong>{product.quantity}</strong>
+        المنتج: <strong>{product.name}</strong> ({product.code}) — الكمية الحالية:{' '}
+        <strong>{product.quantity}</strong>
       </p>
       <Alert kind="error">{error}</Alert>
       <Field label="كمية الدفعة المستلمة" htmlFor="rs-qty" required>
-        <input id="rs-qty" type="number" min={1} step={1} dir="ltr" className="num" value={quantity} onChange={(e) => setQuantity(e.target.value)} autoFocus />
+        <input
+          id="rs-qty"
+          type="number"
+          min={1}
+          step={1}
+          dir="ltr"
+          className="num"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+          autoFocus
+        />
       </Field>
       <Field label="ملاحظة (اختياري)" htmlFor="rs-note">
-        <input id="rs-note" type="text" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: دفعة من المورد — رقم الفاتورة الورقية" />
+        <input
+          id="rs-note"
+          type="text"
+          maxLength={500}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="مثال: دفعة من المورد — رقم الفاتورة الورقية"
+        />
       </Field>
       {confirming && (
         <div className="confirm-box" role="alert">
-          هل تؤكد استلام <strong>{q}</strong> وحدة وإضافتها إلى المخزون ليصبح الرصيد <strong>{product.quantity + (Number.isInteger(q) && q > 0 ? q : 0)}</strong>؟
+          هل تؤكد استلام <strong>{q}</strong> وحدة وإضافتها إلى المخزون ليصبح الرصيد{' '}
+          <strong>{product.quantity + (Number.isInteger(q) && q > 0 ? q : 0)}</strong>؟
         </div>
       )}
       <div className="form-actions">
@@ -111,7 +136,11 @@ export function CorrectStockDialog({ product, onDone, onClose }: DialogProps): R
     setError(null)
     try {
       await unwrap(
-        window.desktop.stock.correct({ productId: product.id, newQuantity: n, reason: reason.trim() })
+        window.desktop.stock.correct({
+          productId: product.id,
+          newQuantity: n,
+          reason: reason.trim()
+        })
       )
       onDone()
     } catch (e) {
@@ -143,11 +172,27 @@ export function CorrectStockDialog({ product, onDone, onClose }: DialogProps): R
       }}
     >
       <p className="muted">
-        المنتج: <strong>{product.name}</strong> ({product.code}) — الكمية الحالية: <strong>{product.quantity}</strong>
+        المنتج: <strong>{product.name}</strong> ({product.code}) — الكمية الحالية:{' '}
+        <strong>{product.quantity}</strong>
       </p>
       <Alert kind="error">{error}</Alert>
-      <Field label="الكمية الفعلية بعد الجرد" htmlFor="cs-qty" required hint="تُسجَّل الحركة كتصحيح بالزيادة أو بالعجز مع الفرق المحسوب تلقائياً">
-        <input id="cs-qty" type="number" min={0} step={1} dir="ltr" className="num" value={newQuantity} onChange={(e) => setNewQuantity(e.target.value)} autoFocus />
+      <Field
+        label="الكمية الفعلية بعد الجرد"
+        htmlFor="cs-qty"
+        required
+        hint="تُسجَّل الحركة كتصحيح بالزيادة أو بالعجز مع الفرق المحسوب تلقائياً"
+      >
+        <input
+          id="cs-qty"
+          type="number"
+          min={0}
+          step={1}
+          dir="ltr"
+          className="num"
+          value={newQuantity}
+          onChange={(e) => setNewQuantity(e.target.value)}
+          autoFocus
+        />
       </Field>
       <Field label="سبب التصحيح" htmlFor="cs-reason" required>
         <textarea
@@ -161,8 +206,9 @@ export function CorrectStockDialog({ product, onDone, onClose }: DialogProps): R
       </Field>
       {confirming && (
         <div className="confirm-box" role="alert">
-          هل تؤكد تعديل رصيد «{product.name}» من <strong>{product.quantity}</strong> إلى <strong>{n}</strong> (فرق{' '}
-          {delta > 0 ? `+${delta}` : delta})؟ هذا الإجراء يُسجَّل في تاريخ الحركات ولا يمكن حذفه.
+          هل تؤكد تعديل رصيد «{product.name}» من <strong>{product.quantity}</strong> إلى{' '}
+          <strong>{n}</strong> (فرق {delta > 0 ? `+${delta}` : delta})؟ هذا الإجراء يُسجَّل في تاريخ
+          الحركات ولا يمكن حذفه.
         </div>
       )}
       <div className="form-actions">

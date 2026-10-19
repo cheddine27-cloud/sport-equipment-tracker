@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Product, StockMovement } from '../../../shared/types'
-import { formatDZD } from '../lib/format'
+import { formatDZD, MOVEMENT_TYPE_LABELS, formatDateTime } from '../lib/format'
 import { unwrap } from '../lib/db-client'
-import { Alert, MOVEMENT_TYPE_LABELS, formatDateTime } from '../components/ui'
+import { Alert } from '../components/ui'
 
 interface ProductDetailProps {
   product: Product
@@ -27,8 +27,12 @@ function ProductDetail({
 
   useEffect(() => {
     let cancelled = false
-    setMovements(null)
-    setError(null)
+    void Promise.resolve().then(() => {
+      if (!cancelled) {
+        setMovements(null)
+        setError(null)
+      }
+    })
     unwrap(window.desktop.stock.movementsForProduct(product.id))
       .then((m) => !cancelled && setMovements(m))
       .catch((e: Error) => !cancelled && setError(e.message))

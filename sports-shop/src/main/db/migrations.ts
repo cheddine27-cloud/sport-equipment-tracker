@@ -107,7 +107,10 @@ export function migrate(db: Database.Database): void {
     if (applied.has(m.version)) continue
     const apply = db.transaction(() => {
       m.up(db)
-      db.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(m.version, m.name)
+      db.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(
+        m.version,
+        m.name
+      )
     })
     apply()
   }

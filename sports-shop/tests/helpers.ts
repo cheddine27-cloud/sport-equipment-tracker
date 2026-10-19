@@ -47,8 +47,7 @@ export function cleanupAll(): void {
 /** Returns the id of a seeded category by exact Arabic name. */
 export function categoryIdByName(db: Database.Database, name: string): number {
   const row = db.prepare('SELECT id FROM categories WHERE name = ?').get(name) as
-    | { id: number }
-    | undefined
+    { id: number } | undefined
   if (!row) throw new Error(`الفئة «${name}» غير موجودة — زرع الفئات فشل`)
   return row.id
 }

@@ -19,3 +19,21 @@ export function formatDZD(amount: number): string {
   }).format(amount)
   return `${formatted} ${CURRENCY_SYMBOL}`
 }
+
+export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
+  OPENING: 'رصيد افتتاحي',
+  RECEIPT: 'استلام دفعة',
+  CORRECTION_UP: 'تصحيح بالزيادة',
+  CORRECTION_DOWN: 'تصحيح بالعجز'
+}
+
+/** Formats SQLite `datetime('now')` (UTC) as local Arabic date/time. */
+export function formatDateTime(utc: string): string {
+  const d = new Date(utc.includes('T') ? utc : utc.replace(' ', 'T') + 'Z')
+  if (Number.isNaN(d.getTime())) return utc
+  return new Intl.DateTimeFormat('ar-DZ', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    numberingSystem: 'latn'
+  }).format(d)
+}

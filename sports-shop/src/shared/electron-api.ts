@@ -38,7 +38,9 @@ export interface DesktopAPI {
 
   products: {
     /** List/search active products, optionally filtered by category. */
-    list(options?: ProductListOptions): Promise<IpcResult<Array<Product & { categoryName: string }>>>
+    list(
+      options?: ProductListOptions
+    ): Promise<IpcResult<Array<Product & { categoryName: string }>>>
     /** Single product by internal id (includes inactive ones). */
     get(id: number): Promise<IpcResult<Product>>
     /** Create with opening stock (recorded as an OPENING movement). */

@@ -11,7 +11,8 @@ const MAX_TEXT_LEN = 200
 const MAX_REASON_LEN = 500
 
 export function requireString(value: unknown, field: string, maxLen = MAX_TEXT_LEN): string {
-  if (typeof value !== 'string') throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نصاً`)
+  if (typeof value !== 'string')
+    throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نصاً`)
   const trimmed = value.trim()
   if (trimmed.length === 0) throw new AppError('VALIDATION', `الحقل «${field}» مطلوب`)
   if (trimmed.length > maxLen) {
@@ -23,7 +24,8 @@ export function requireString(value: unknown, field: string, maxLen = MAX_TEXT_L
 /** Optional free-text field: empty/whitespace/null become null. */
 export function optionalText(value: unknown, field: string, maxLen = MAX_TEXT_LEN): string | null {
   if (value === null || value === undefined) return null
-  if (typeof value !== 'string') throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نصاً`)
+  if (typeof value !== 'string')
+    throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نصاً`)
   const trimmed = value.trim()
   if (trimmed.length === 0) return null
   if (trimmed.length > maxLen) {
@@ -52,7 +54,8 @@ export function positiveInt(value: unknown, field: string): number {
 /** Boolean with coercion from 0/1 (SQLite stores booleans as integers). */
 export function requireBoolean(value: unknown, field: string): boolean {
   if (value === 0 || value === 1) return value === 1
-  if (typeof value !== 'boolean') throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نعم/لا`)
+  if (typeof value !== 'boolean')
+    throw new AppError('VALIDATION', `الحقل «${field}» يجب أن يكون نعم/لا`)
   return value
 }
 
